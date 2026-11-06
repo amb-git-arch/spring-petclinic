@@ -36,7 +36,9 @@ class TelephoneMaskerTests {
 	private static final List<String> SEED_TELEPHONES = List.of("6085551023", "6085551749", "6085558763", "6085553198",
 			"6085552765", "6085552654", "6085555387", "6085557683", "6085559435", "6085555487");
 
-	private final TelephoneMasker masker = new TelephoneMasker();
+	private final TelephoneMasker masker = new TelephoneMasker(true);
+
+	private final TelephoneMasker diagnosticsMasker = new TelephoneMasker(false);
 
 	@ParameterizedTest
 	@NullAndEmptySource
@@ -68,6 +70,13 @@ class TelephoneMaskerTests {
 				.startsWith("******")
 				.doesNotContain(telephone.substring(0, telephone.length() - 4));
 		}
+	}
+
+	@ParameterizedTest
+	@NullAndEmptySource
+	@ValueSource(strings = { "6085551023", " 6085551023 ", "1234", "608-555-1023" })
+	void returnsTelephoneUnchangedWhenMaskingIsOff(String telephone) {
+		assertThat(diagnosticsMasker.mask(telephone)).isEqualTo(telephone);
 	}
 
 }
