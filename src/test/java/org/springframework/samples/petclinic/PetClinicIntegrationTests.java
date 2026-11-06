@@ -54,6 +54,7 @@ public class PetClinicIntegrationTests {
 		RestTemplate template = builder.baseUri("http://localhost:" + port).build();
 		ResponseEntity<String> result = template.exchange(RequestEntity.get("/owners/1").build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getBody()).contains("6085551023");
 	}
 
 	@Test
@@ -61,6 +62,9 @@ public class PetClinicIntegrationTests {
 		RestTemplate template = builder.baseUri("http://localhost:" + port).build();
 		ResponseEntity<String> result = template.exchange(RequestEntity.get("/owners?lastName=").build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getBody()).contains("******1023")
+			.doesNotContain("6085551023", "6085551749", "6085558763", "6085553198", "6085552765", "6085552654",
+					"6085555387", "6085557683", "6085559435", "6085555487");
 	}
 
 	public static void main(String[] args) {

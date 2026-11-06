@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledInNativeImage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +34,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
@@ -58,6 +60,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author Wick Dynex
  */
 @WebMvcTest(OwnerController.class)
+@Import(TelephoneMasker.class)
 @DisabledInNativeImage
 @DisabledInAotMode
 class OwnerControllerTests {
@@ -293,6 +296,38 @@ class OwnerControllerTests {
 			.andExpect(model().attribute("owner",
 					hasProperty("pets", hasItem(hasProperty("visits", hasSize(greaterThan(0)))))))
 			.andExpect(view().name("owners/ownerDetails"));
+	}
+
+	@Test
+	void ownersListMasksTelephone() throws Exception {
+		Owner betty = new Owner();
+		betty.setId(2);
+		betty.setFirstName("Betty");
+		betty.setLastName("Davis");
+		betty.setAddress("638 Cardinal Ave.");
+		betty.setCity("Sun Prairie");
+		betty.setTelephone("6085551749");
+		Page<Owner> owners = new PageImpl<>(List.of(george(), betty));
+		when(this.owners.findByLastNameStartingWith(eq(""), any(Pageable.class))).thenReturn(owners);
+
+		mockMvc.perform(get("/owners?page=1"))
+			.andExpect(status().isOk())
+			.andExpect(view().name("owners/ownersList"))
+			.andExpect(content().string(containsString("Telephone")))
+			.andExpect(content().string(containsString("/owners/" + TEST_OWNER_ID)))
+			.andExpect(content().string(containsString("******1023")))
+			.andExpect(content().string(containsString("******1749")))
+			.andExpect(content().string(not(containsString("6085551023"))))
+			.andExpect(content().string(not(containsString("6085551749"))));
+	}
+
+	@Test
+	void ownerDetailsShowsFullTelephone() throws Exception {
+		mockMvc.perform(get("/owners/{ownerId}", TEST_OWNER_ID))
+			.andExpect(status().isOk())
+			.andExpect(view().name("owners/ownerDetails"))
+			.andExpect(content().string(containsString("6085551023")))
+			.andExpect(content().string(not(containsString("******1023"))));
 	}
 
 	@Test
